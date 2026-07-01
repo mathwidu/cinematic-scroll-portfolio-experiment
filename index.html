@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AXON | Cinematic Scroll Experiment</title>
+    <meta
+      name="description"
+      content="A portfolio experiment turning AI-generated product video frames into a scroll-controlled cinematic microsite."
+    />
+    <link rel="preload" href="assets/sequence/axon_0001.jpg" as="image" />
+    <link rel="preload" href="assets/sequence/axon_0061.jpg" as="image" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="kinetic-field" aria-hidden="true"></canvas>
+
+    <header class="topbar" aria-label="Primary">
+      <a class="brand" href="#hero" aria-label="AXON home">
+        <span class="brand-mark"></span>
+        <span>AXON</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#craft">Build</a>
+        <a href="#ritual">Layers</a>
+        <a href="#reserve">Reserve</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="hero">
+        <div class="cinema-sticky" aria-label="AXON product visual">
+          <div class="hero-stage">
+            <div class="motion-ribbon ribbon-one"></div>
+            <div class="motion-ribbon ribbon-two"></div>
+            <canvas id="product-sequence" class="product-sequence" width="1280" height="720" aria-label="AXON mechanical keyboard opening into floating components"></canvas>
+            <img src="assets/fal-inputs/keyboard-start.png" alt="AXON mechanical keyboard assembled on a dark studio surface" class="product-fallback" />
+          </div>
+          <div class="scroll-meter" aria-hidden="true"><span></span></div>
+          <div class="phase-readout" aria-hidden="true">
+            <span>assembled</span>
+            <span>switch field</span>
+            <span>open chassis</span>
+          </div>
+        </div>
+
+        <div class="story-panel panel-intro">
+          <p class="eyebrow">low-profile mechanical keyboard</p>
+          <h1>AXON</h1>
+          <p class="lead">A compact board engineered to open itself: quiet aluminum, floating switches, and a green light bar under every layer.</p>
+          <div class="hero-actions" aria-label="Product actions">
+            <a class="primary-action" href="#reserve">Reserve drop</a>
+            <a class="secondary-action" href="#craft">See build</a>
+          </div>
+        </div>
+
+        <div class="story-panel panel-switches">
+          <p class="eyebrow">scroll-controlled sequence</p>
+          <h2>One product, revealed by motion.</h2>
+          <p class="lead">The keyboard stays present while the page moves. Each notch of scroll advances the video frames, so the object responds to the reader instead of playing on its own.</p>
+        </div>
+
+        <div class="story-panel panel-layers">
+          <p class="eyebrow">exploded assembly</p>
+          <h2>The sale is the teardown.</h2>
+          <p class="lead">Keycaps, transparent switches, plate, PCB, screws, case, and light bar separate in the same viewport as the copy. The animation becomes the product explanation.</p>
+        </div>
+
+        <div class="story-panel panel-finish">
+          <p class="eyebrow">ready for commerce</p>
+          <h2>By the end, the buyer understands the build.</h2>
+          <p class="lead">This is the workflow from the reference: AI video gives us the cinematic asset; the site turns it into a controllable scroll narrative.</p>
+        </div>
+      </section>
+
+      <section class="ticker" aria-label="Product qualities">
+        <div class="ticker-track">
+          <span>hot-swap switches</span>
+          <span>floating keycap field</span>
+          <span>CNC aluminum case</span>
+          <span>diffused green light bar</span>
+          <span>exploded assembly view</span>
+        </div>
+      </section>
+
+      <section class="craft" id="craft">
+        <div class="section-kicker">build</div>
+        <h2>Every layer earns its place.</h2>
+        <div class="craft-grid">
+          <article class="craft-item">
+            <span>01</span>
+            <h3>Keycap field</h3>
+            <p>Low-profile caps lift as one plane, keeping the silhouette readable while the board opens.</p>
+          </article>
+          <article class="craft-item">
+            <span>02</span>
+            <h3>Switch matrix</h3>
+            <p>Transparent housings reveal the spring path, stabilizers, and plate geometry below the surface.</p>
+          </article>
+          <article class="craft-item">
+            <span>03</span>
+            <h3>Core light</h3>
+            <p>The PCB, gasket stack, and edge glow stay separated long enough to understand the build.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="ritual" id="ritual">
+        <div class="ritual-copy">
+          <div class="section-kicker">layers</div>
+          <h2>Closed object, open system.</h2>
+          <p>AXON is tuned for short-travel precision without hiding the engineering. The product reads as a single object, then separates into its functional stack.</p>
+        </div>
+        <div class="flavor-stack" aria-label="Keyboard layer stack">
+          <div><span>top</span><strong>PBT caps</strong></div>
+          <div><span>middle</span><strong>hot-swap plate</strong></div>
+          <div><span>base</span><strong>lit aluminum shell</strong></div>
+        </div>
+      </section>
+
+      <section class="reserve" id="reserve">
+        <p class="eyebrow">founder batch opens friday</p>
+        <h2>300 boards. One numbered run.</h2>
+        <form class="reserve-form">
+          <label>
+            <span>Email</span>
+            <input type="email" placeholder="you@example.com" aria-label="Email" />
+          </label>
+          <button type="button">Join the list</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

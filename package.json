@@ -1,0 +1,15 @@
+{
+  "name": "cinematic-scroll-portfolio-experiment",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 4177 --bind 127.0.0.1",
+    "check": "node --check script.js && node --check scripts/fal-image-to-video.mjs && bash -n scripts/extract-fal-frames.sh",
+    "fal:video": "node scripts/fal-image-to-video.mjs",
+    "fal:frames": "bash scripts/extract-fal-frames.sh",
+    "fal:run": "npm run fal:video && npm run fal:frames"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.7.1"
+  }
+}
