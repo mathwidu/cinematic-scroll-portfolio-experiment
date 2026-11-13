@@ -6,6 +6,10 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/scripts/ci"
+mkdir -p "$tmp/bin"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp/bin/sleep"
+chmod 700 "$tmp/bin/sleep"
+export PATH="$tmp/bin:$PATH"
 cp "$here/deploy-restricted.sh" "$tmp/scripts/ci/deploy-restricted.sh"
 old=sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 new=sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
@@ -26,7 +30,10 @@ MOCK
 cat > "$tmp/scripts/smoke-public.sh" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
-[[ ${FAIL_SMOKE-0} == 0 ]]
+count=$(cat "$TEST_STATE/smoke_count" 2>/dev/null || printf '0')
+count=$((count + 1))
+printf '%s\n' "$count" > "$TEST_STATE/smoke_count"
+[[ ${FAIL_SMOKE-0} == 0 && $count -gt ${FAIL_BEFORE-0} ]]
 MOCK
 chmod 700 "$tmp/scripts/ci/ssh-restricted.sh" "$tmp/scripts/smoke-public.sh"
 
@@ -34,6 +41,13 @@ bash "$tmp/scripts/ci/deploy-restricted.sh" "$new" > "$tmp/output"
 grep -qx "deployed_digest=$new" "$tmp/output"
 test "$(cat "$tmp/current")" = "$new"
 printf '%s\n' "$old" > "$tmp/current"
+printf '0\n' > "$tmp/smoke_count"
+FAIL_BEFORE=2 bash "$tmp/scripts/ci/deploy-restricted.sh" "$new" > "$tmp/output"
+test "$(cat "$tmp/current")" = "$new"
+test "$(cat "$tmp/smoke_count")" = 3
+test ! -e "$tmp/events"
+printf '%s\n' "$old" > "$tmp/current"
+printf '0\n' > "$tmp/smoke_count"
 if FAIL_SMOKE=1 bash "$tmp/scripts/ci/deploy-restricted.sh" "$new" > "$tmp/output" 2>&1; then
   echo 'expected smoke failure' >&2
   exit 1

@@ -10,49 +10,49 @@
 - Public network: `network_swarm_public`
 - Database/secrets/volumes: none
 
-## First Deploy Checklist
+## Current CI/CD
 
-1. Create the GitHub repo and push `main`.
-2. Create DNS `A` record:
-   - `cinematic-scroll.matheusduarte.dev.br -> 187.77.47.96`
-3. Build/push the image through GitHub Actions, or locally with a GHCR login.
-4. Copy `deploy/swarm/cinematic-scroll-portfolio.traefik.yml` to the VPS stack folder.
-5. Deploy the stack on the VPS.
-6. Smoke:
+1. Pushes to `main` and PRs run `.github/workflows/swarm-ghcr-cicd.yml`.
+   Pushes publish the GHCR image; PRs build without publishing.
+2. For a release, run `.github/workflows/cinematic-restricted-ci-pilot.yml`
+   manually on `main` with `operation=inspect`, then `operation=deploy`.
+   `deploy` runs the quality check, builds and publishes a unique image,
+   updates the Swarm service by digest, checks the public route and attempts
+   a conditional rollback if verification fails. A short retry window covers
+   Traefik convergence after the service update.
+3. Confirm the run, service digest, `1/1`, container health, HTTPS and smoke:
 
 ```bash
 scripts/smoke-public.sh https://cinematic-scroll.matheusduarte.dev.br
 ```
 
-## GitHub Secrets For Workflow Deploy
+## GitHub Secrets For Restricted Deploy
 
-Follow the personal VPS SSH pattern with one key per repo:
+The manual deploy uses a dedicated key whose public entry on the VPS has
+`restrict` and a forced command for this service only:
 
 - `VPS_HOST`
-- `VPS_USER`
 - `VPS_PORT`
-- `VPS_SSH_KEY`
+- `CINEMATIC_CI_SSH_KEY`
 
-The workflow can build on every push. The remote service update runs only from `workflow_dispatch`.
+The private key stays in the GitHub Actions secret. The workflow checks the
+VPS Ed25519 host fingerprint before connecting. The old `VPS_USER` and
+`VPS_SSH_KEY` secrets are not referenced by either current workflow; retain
+their values only for the documented recovery window.
 
-## Manual First Stack Deploy
+## Historical first deployment — 2026-07-01
 
-Use this only after DNS and GHCR access are ready:
+The first stack deployment used an unrestricted `deploy` key and the stack
+file at `/home/deploy/stacks/cinematic-scroll-portfolio/stack.yml`. DNS and
+Traefik were already configured. Do not use the old SSH procedure for regular
+releases. The restricted workflow updates the existing service; it does not
+recreate the stack or change DNS.
 
-```bash
-ssh deploy@187.77.47.96 'mkdir -p /opt/stacks/cinematic-scroll-portfolio'
-scp deploy/swarm/cinematic-scroll-portfolio.traefik.yml \
-  deploy@187.77.47.96:/opt/stacks/cinematic-scroll-portfolio/stack.yml
-ssh deploy@187.77.47.96 \
-  'docker stack deploy -c /opt/stacks/cinematic-scroll-portfolio/stack.yml cinematic-scroll-portfolio --with-registry-auth'
-```
-
-## Rollback
-
-```bash
-ssh deploy@187.77.47.96 \
-  'docker service rollback cinematic-scroll-portfolio_web'
-```
+The manual workflow records the previous digest and only restores it if the
+service still runs the digest from that release. If automatic recovery fails,
+stop further releases and inspect the service from the separate administrative
+session before changing it again. An image rollback cannot undo external
+effects; this app currently declares no database, volume or secret.
 
 ## Notes
 

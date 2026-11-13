@@ -12,6 +12,15 @@ old_digest=$(printf '%s\n' "$snapshot" | sed -n '1s/^current_digest=//p')
 [[ $old_digest =~ $digest_re ]] || { echo 'invalid current digest' >&2; exit 1; }
 [[ $(printf '%s\n' "$snapshot" | sed -n '2p') == 'replicas=1/1' ]] || { echo 'service not healthy' >&2; exit 1; }
 
+smoke_with_retry() {
+  local attempt
+  for attempt in 1 2 3 4 5 6; do
+    if bash "$here/../smoke-public.sh"; then return 0; fi
+    [[ $attempt -eq 6 ]] || sleep 5
+  done
+  return 1
+}
+
 "$remote" verify "$new_digest"
 deployment_started=0
 on_exit() {
@@ -20,7 +29,7 @@ on_exit() {
   if (( result != 0 && deployment_started == 1 )); then
     echo 'Deploy failed; attempting conditional rollback to the recorded digest.' >&2
     if "$remote" rollback "$new_digest" "$old_digest" &&
-      bash "$here/../smoke-public.sh"; then
+      smoke_with_retry; then
       echo 'Rollback and public smoke completed.' >&2
     else
       echo 'Rollback or smoke failed; manual inspection required.' >&2
@@ -35,5 +44,5 @@ deployment_started=1
 after=$("$remote" status)
 printf '%s\n' "$after" | grep -Fqx "current_digest=$new_digest"
 printf '%s\n' "$after" | grep -Fqx 'replicas=1/1'
-bash "$here/../smoke-public.sh"
+smoke_with_retry
 printf 'deployed_digest=%s\nprevious_digest=%s\n' "$new_digest" "$old_digest"
