@@ -30,13 +30,20 @@ trap 'rm -rf "$scratch"' EXIT
 chmod 700 "$scratch"
 printf '%s\n' "$CINEMATIC_CI_SSH_KEY" > "$scratch/id_ci"
 chmod 600 "$scratch/id_ci"
-ssh-keyscan -T 10 -p "$VPS_PORT" -t ed25519 "$VPS_HOST" 2>/dev/null > "$scratch/known_hosts"
-[[ $(wc -l < "$scratch/known_hosts" | tr -d ' ') == 1 ]] || { echo 'unexpected host key count' >&2; exit 1; }
-observed=$(ssh-keygen -lf "$scratch/known_hosts" -E sha256 | awk '{print $2}')
-[[ $observed == 'SHA256:OP2mEYSEN/XyO8D5UMqmlmOQ3XIWOjpICG6PpFPyAAE' ]] || {
-  echo 'VPS host key mismatch' >&2
-  exit 1
-}
+for attempt in 1 2 3; do
+  ssh-keyscan -T 10 -p "$VPS_PORT" -t ed25519 "$VPS_HOST" 2>/dev/null > "$scratch/known_hosts" || true
+  [[ -s $scratch/known_hosts ]] && break
+  [[ $attempt -eq 3 ]] || sleep 2
+done
+[[ -s $scratch/known_hosts ]] || { echo 'no VPS Ed25519 host key after retries' >&2; exit 1; }
+fingerprints=$(ssh-keygen -lf "$scratch/known_hosts" -E sha256 | awk '{print $2}')
+[[ -n $fingerprints ]] || { echo 'invalid VPS host key' >&2; exit 1; }
+while IFS= read -r observed; do
+  [[ $observed == 'SHA256:OP2mEYSEN/XyO8D5UMqmlmOQ3XIWOjpICG6PpFPyAAE' ]] || {
+    echo 'VPS host key mismatch' >&2
+    exit 1
+  }
+done <<< "$fingerprints"
 
 ssh -T -i "$scratch/id_ci" \
   -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
