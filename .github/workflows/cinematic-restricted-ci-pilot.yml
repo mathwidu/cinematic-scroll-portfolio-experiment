@@ -1,0 +1,84 @@
+name: Cinematic restricted CI pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Inspect the restricted route or deploy the current main commit
+        required: true
+        type: choice
+        default: inspect
+        options:
+          - inspect
+          - deploy
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cinematic-scroll-restricted-deploy
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/mathwidu/cinematic-scroll-portfolio-experiment
+
+jobs:
+  quality:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: npm run check
+
+  inspect:
+    if: inputs.operation == 'inspect'
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check restricted SSH identity and current service
+        env:
+          CINEMATIC_CI_SSH_KEY: ${{ secrets.CINEMATIC_CI_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: bash scripts/ci/ssh-restricted.sh check
+
+  build:
+    if: inputs.operation == 'deploy'
+    needs: quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:ci-pilot-${{ github.sha }}-${{ github.run_id }}
+
+  deploy:
+    if: inputs.operation == 'deploy'
+    needs: [quality, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Deploy digest, smoke and conditionally roll back
+        env:
+          CINEMATIC_CI_SSH_KEY: ${{ secrets.CINEMATIC_CI_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          IMAGE_DIGEST: ${{ needs.build.outputs.digest }}
+        run: bash scripts/ci/deploy-restricted.sh "$IMAGE_DIGEST"

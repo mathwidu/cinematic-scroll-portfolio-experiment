@@ -5,3 +5,9 @@ fal-results/
 npm-debug.log*
 screenshots/
 test-results/
+
+# graphify-standard:start
+/graphify-out/
+/.graphify/*
+!/.graphify/config.json
+# graphify-standard:end
