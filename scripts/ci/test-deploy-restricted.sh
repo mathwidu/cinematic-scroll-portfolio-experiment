@@ -2,6 +2,7 @@
 set -euo pipefail
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+[[ -x $here/ssh-restricted.sh ]] || { echo 'SSH client must be executable in the checkout' >&2; exit 1; }
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/scripts/ci"
